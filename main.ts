@@ -4,14 +4,14 @@ const text = await readFileStr('automate');
 const lines = text.split('\n');
 
 interface Automate {
-	alphabet: string[];
+	alphabet: string;
 	state: number;
 	accepting_states: number[];
-	matrix: string[][][];
+	matrix: string[][];
 }
 
 let automate: Automate = {
-	alphabet: [],
+	alphabet: '',
 	state: -1,
 	accepting_states: [],
 	matrix: [],
@@ -21,7 +21,7 @@ lines.forEach((l, i) => {
 	if (i > 7) return;
 	switch (i) {
 		case 0:
-			automate.alphabet = l.split('');
+			automate.alphabet = l;
 			break;
 		case 1:
 			automate.state = parseInt(l);
@@ -31,32 +31,27 @@ lines.forEach((l, i) => {
 			break;
 		default:
 			const transitions = l.split(';');
-			automate.matrix.push(transitions.map((t) => t.split('')));
+			automate.matrix.push(transitions);
 			break;
 	}
 });
 
-function testWord(auto: Automate, w: string[]): boolean {
+function testWord(auto: Automate, w: string): boolean {
 	if (w.length === 0) return auto.accepting_states.includes(auto.state);
 	if (!auto.alphabet.includes(w[0])) return false;
 
-	let include = false;
-	let newState = -1;
-	auto.matrix[auto.state].forEach((t, i) => {
-		if (t.includes(w[0])) {
-			include = true;
-			newState = i;
-		}
-	});
-
-	if (!include) return false;
-
-	return testWord(
-		{ ...auto, state: newState },
-		w.filter((l, i) => i > 0)
+	let newStates = auto.matrix[auto.state].reduce<number[]>(
+		(acc, t, i) => (t.includes(w[0]) ? [...acc, i] : acc),
+		[]
 	);
+
+	for (let i = 0; i < newStates.length; i++) {
+		if (testWord({ ...auto, state: newStates[i] }, w.slice(1))) return true;
+	}
+
+	return false;
 }
 
 ['aaba', 'aa', 'a', 'aba'].forEach((w) => {
-	console.log(w, '=>', testWord(automate, w.split('')));
+	console.log(w, '=>', testWord(automate, w));
 });
